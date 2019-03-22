@@ -1,9 +1,17 @@
 package com.busycount.permission;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.ContextWrapper;
+import android.content.pm.PackageManager;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.content.ContextCompat;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * PermissionUtil
@@ -54,24 +62,49 @@ import android.support.v4.app.FragmentManager;
  */
 public class PermissionUtil {
 
-    public static void request(FragmentActivity activity, String[] permissions, PermissionListener listener) {
-        request(activity.getSupportFragmentManager(), permissions, listener);
+    public static void request(@NonNull Context context, @NonNull String[] permissions, @NonNull PermissionListener listener) {
+        FragmentActivity activity = null;
+        while (context instanceof ContextWrapper) {
+            if (context instanceof FragmentActivity) {
+                activity = (FragmentActivity) context;
+                break;
+            }
+            context = ((ContextWrapper) context).getBaseContext();
+        }
+        if (activity != null) {
+            request(activity, permissions, listener);
+        }
     }
 
-    public static void request(Fragment fragment, String[] permissions, PermissionListener listener) {
+    public static void request(@NonNull Fragment fragment, @NonNull String[] permissions, @NonNull PermissionListener listener) {
         FragmentActivity activity = fragment.getActivity();
         if (activity != null) {
-            request(activity.getSupportFragmentManager(), permissions, listener);
+            request(activity, permissions, listener);
         }
     }
 
-    public static void request(Context context, String[] permissions, PermissionListener listener) {
-        if (context instanceof FragmentActivity) {
-            request((FragmentActivity) context, permissions, listener);
+
+    public static void request(@NonNull FragmentActivity activity, @NonNull String[] permissions, @NonNull PermissionListener listener) {
+        if (permissions.length == 0) {
+            listener.onGranted();
+            return;
+        }
+        List<String> unGranted = new ArrayList<>();
+        for (String permission : permissions) {
+            if (ContextCompat.checkSelfPermission(activity, permission) != PackageManager.PERMISSION_GRANTED) {
+                unGranted.add(permission);
+            }
+        }
+        if (unGranted.isEmpty()) {
+            listener.onGranted();
+        } else {
+            String[] unGrantedPermissions = new String[unGranted.size()];
+            requestFragmentManager(activity.getSupportFragmentManager(), unGranted.toArray(unGrantedPermissions), listener);
         }
     }
 
-    private static void request(FragmentManager fm, String[] permissions, PermissionListener listener) {
+
+    private static void requestFragmentManager(@NonNull FragmentManager fm, @NonNull String[] permissions, @NonNull PermissionListener listener) {
         PermissionFragment fragment = (PermissionFragment) fm.findFragmentByTag(PermissionFragment.TAG);
         if (fragment == null) {
             fragment = new PermissionFragment();

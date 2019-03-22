@@ -39,29 +39,7 @@ public class PermissionFragment extends Fragment {
     }
 
     public void requestPermission() {
-        if (permissions == null || permissions.length == 0 || permissionListener == null) {
-            return;
-        }
-        List<String> list = new ArrayList<>();
-        for (String str : permissions) {
-            if (!checkPermission(str)) {
-                list.add(str);
-            }
-        }
-        if (list.isEmpty()) {
-            onGranted();
-        } else {
-            String[] strArr = new String[list.size()];
-            requestPermissions(list.toArray(strArr), REQUEST_CODE);
-        }
-    }
-
-    private boolean checkPermission(String permission) {
-        if (getContext() == null) {
-            return false;
-        } else {
-            return ContextCompat.checkSelfPermission(getContext(), permission) == PackageManager.PERMISSION_GRANTED;
-        }
+        requestPermissions(permissions, REQUEST_CODE);
     }
 
     @Override
